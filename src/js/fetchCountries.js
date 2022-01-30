@@ -7,7 +7,7 @@ export function fetchCountries(name) {
             if (response.ok) {
                 return response.json();
             } else {
-                Notiflix.Notify.failure("Oops, there is no country with that name");
+                throw new Error;
             };
         });
 };
