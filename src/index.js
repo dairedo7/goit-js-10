@@ -5,59 +5,78 @@ import lodash from 'lodash.debounce';
 import itemListTemplate from './templates/cardTemplateMini.hbs';
 import specificItemTemplate from './templates/cardTemplateFull.hbs';
 
+
 const DEBOUNCE_DELAY = 300;
+let formData = '';
+
+const countriesList = document.querySelector(".country-list");
+const countryInfo = document.querySelector(".country-info");
+const inputField = document.querySelector("input#search-box")
 
 
-const refs = {
-    countryCard: document.querySelector(".country-list"),
-    countryCardTwo: document.querySelector(".country-info"),
-    input: document.querySelector("input#search-box")
-}
-
-refs.input.addEventListener('input', lodash(() => {
-    if (refs.input.value.trim() === '') { // do this to avoid having error after emptying the field
-        refs.countryCard.innerHTML = '';
-        refs.countryCardTwo.innerHTML = '';
-        return;
+inputField.addEventListener('input', lodash(() => {
+    if (inputField.value.trim() === '') {  // do this to avoid having error after emptying the field
+        countriesList.innerHTML = '';
+        countryInfo.innerHTML = '';
     }
 
-    refs.countryCard.innerHTML = ' '; //add this to clean countryCard after updating the field results
-    fetchCountries(refs.input.value.trim())
-        .then(renderCountry)
-        .catch(onFetchError)
+    countriesList.innerHTML = ' '; //add this to clean countryCard after updating the field results
 
+    formData = inputField.value.trim();
+    const dataTrimmed = formData;
+
+    if (dataTrimmed !== '') {
+        loadCountries(formData);
+    } else {
+         Notiflix.Notify.failure("Oops, there is no country with that name");
+    }
+   
 }, DEBOUNCE_DELAY))
 
-function renderCountry(country) {
-    refs.countryCardTwo.innerHTML = ' '
-    if (country.length > 1 && country.length <= 10) {
-        country.forEach(e => {
-            const markup = itemListTemplate(e)
-            refs.countryCard.insertAdjacentHTML("afterBegin", markup)
-            console.log(markup)
-        })
+async function loadCountries(formData) {
+    try {
+        const data = await fetchCountries(formData);
+        console.log(data);
+        renderCountry(data);
+    }
+    catch (error){
+        console.log(error);
+    }
+}
 
-    } else if (country.length <= 1) {
-        refs.countryCard.innerHTML = ' '
-        country.forEach(e => {
-            const newObject = {
-                flags: e.flags.svg,
-                official: e.name.official,
-                name: e.name.common,
-                capital: e.capital,
-                population: e.population,
-                languages: Object.values(e.languages)
+function renderCountry(country) {
+    countryInfo.innerHTML = '';
+    if (country.length > 1 && country.length <= 10) {
+        country.map((item) => {
+            const obj = {
+                name: item.name,
+                nativeName: item.nativeName,
+                flag: item.flag,
             }
-            const markupTwo = specificItemTemplate(newObject)
-            refs.countryCardTwo.innerHTML = markupTwo;
-            console.log(markupTwo)
+            console.log(itemListTemplate(obj))
+            return countriesList.insertAdjacentHTML('afterbegin', itemListTemplate(obj));
+        });
+    }
+    if (country.length === 1) {
+        countriesList.innerHTML = '';
+    
+        country.map(item => {
+            const obj = {
+                name: item.name.common,
+                official: item.name.official,
+                capital: item.capital,
+                population: item.population,
+                flags: item.flags.svg,
+                languages: item.languages.map(({name}) => name),
+            }
+                console.log(item);
+            return countryInfo.insertAdjacentHTML('afterbegin', specificItemTemplate(obj));
         })
-    } else {
+    }
+    if (country.length > 10) {
         Notiflix.Notify.info("Too many matches found. Please enter a more specific name.")
     }
-
-
-}
-function onFetchError() {
-    Notiflix.Notify.failure("Oops, there is no country with that name");
+    if (country.length === 0){
+        Notiflix.Notify.failure("Oops, there is no country with that name");
+     }
 }

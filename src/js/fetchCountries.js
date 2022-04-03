@@ -1,13 +1,20 @@
-import Notiflix from 'notiflix';
-
-export function fetchCountries(name) {
-
-    return fetch(`https://restcountries.com/v3.1/name/${name}?fields=name,capital,population,flags,languages`)
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error;
-            };
-        });
+import Notiflix, { Notify } from 'notiflix';
+import axios from 'axios';
+export async function fetchCountries(name) {
+    const options = new URLSearchParams ({
+        capital: 'capital',
+        population: 'population',
+        flags: 'flags',
+        languages: 'languages',
+    })
+    try {
+        const response = await axios.get(`https://restcountries.com/v2/name/${name}?${options}`);
+        console.log(response)
+        return response.data;
+    } 
+    catch (error) {
+        Notify.failure("Oops, there is no country with that name")
+    }
+    
 };
+
